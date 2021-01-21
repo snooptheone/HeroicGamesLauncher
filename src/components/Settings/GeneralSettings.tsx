@@ -74,7 +74,7 @@ export default function GeneralSettings({
                   properties: ["openDirectory"],
                 })
                 .then(({ filePaths }: Path) =>
-                  setDefaultInstallPath(filePaths[0] ? `'${filePaths[0]}'` : "")
+                  setDefaultInstallPath(filePaths[0] ? `${filePaths[0]}` : "")
                 )
             }
           >

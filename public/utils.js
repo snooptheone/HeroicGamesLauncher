@@ -10,13 +10,13 @@ const axios = require('axios')
 
 const home = homedir();
 const legendaryConfigPath = `${home}/.config/legendary`;
-const heroicFolder = `${home}/.config/heroic/`;
+const heroicFolder = `${home}\\.config\\heroic\\`;
 const heroicConfigPath = `${heroicFolder}config.json`;
-const heroicGamesConfigPath = `${heroicFolder}GamesConfig/`
+const heroicGamesConfigPath = `${heroicFolder}GamesConfig\\`
 const heroicToolsPath = `${heroicFolder}Tools/DXVK`
 const userInfo = `${legendaryConfigPath}/user.json`;
 const heroicInstallPath = `${home}/Games/Heroic`;
-const legendaryBin = fixPathForAsarUnpack(path.join(__dirname, "/bin/legendary"));
+const legendaryBin = fixPathForAsarUnpack(path.join(__dirname, "/bin/legendary.exe"));
 const icon = fixPathForAsarUnpack(path.join(__dirname, "/icon.png"));
 const loginUrl = "https://www.epicgames.com/id/login?redirectUrl=https%3A%2F%2Fwww.epicgames.com%2Fid%2Fapi%2Fredirect";
 const sidInfoUrl = "https://github.com/flavioislima/HeroicGamesLauncher/issues/42"

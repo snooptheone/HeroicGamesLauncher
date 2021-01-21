@@ -24,6 +24,8 @@ const promisify = require("util").promisify;
 const execAsync = promisify(exec);
 const stat = promisify(fs.stat);
 const axios = require("axios");
+const os = require("os");
+const shell = require('electron').shell;
 
 const {
   app,
@@ -54,7 +56,7 @@ function createWindow() {
       REACT_DEVELOPER_TOOLS,
     } = require("electron-devtools-installer");
 
-    getLatestDxvk()
+    //getLatestDxvk()
 
     installExtension(REACT_DEVELOPER_TOOLS)
       .catch((err) => {
@@ -161,15 +163,15 @@ ipcMain.handle("legendary", async (event, args) => {
 ipcMain.handle("install", async (event, args) => {
   const { appName: game, path } = args;
   const logPath = `${heroicGamesConfigPath}${game}.log`;
-  let command = `${legendaryBin} install ${game} --base-path '${path}' -y &> ${logPath}`;
+  let command = `${legendaryBin} install ${game} --base-path "${path}" -y 2> ${logPath}`;
   if (path === "default") {
     const { defaultInstallPath } = JSON.parse(
       fs.readFileSync(heroicConfigPath)
     ).defaultSettings;
-    command = `${legendaryBin} install ${game} --base-path ${defaultInstallPath} -y |& tee ${logPath}`;
+    command = `${legendaryBin} install ${game} --base-path ${defaultInstallPath} -y 2> ${logPath}`;
   }
   console.log(`Installing ${game} with:`, command);
-  await execAsync(command, {shell: '/bin/bash'})
+  await execAsync(command)
     .then(console.log)
     .catch(console.log);
 });
@@ -184,17 +186,32 @@ ipcMain.handle("importGame", async (event, args) => {
 
 ipcMain.on("requestGameProgress", (event, appName) => {
   const logPath = `${heroicGamesConfigPath}${appName}.log`;
-  exec(
-    `tail ${logPath} | grep 'Progress: ' | awk '{print $5 $6}'`,
+  /*exec(
+    `type ${logPath} | findstr /C:'Progress: '`,
     (error, stdout, stderr) => {
       const status = `${stdout.split("\n")[0]}`.split('(');
-      const percent = status[0]
+      const percent = status[0].split("Progress: ")[1]
       const bytes = status[1] && status[1].replace('),', 'MB')
       const progress = { percent, bytes }
       console.log(`Install Progress: ${appName} ${progress.percent}/${progress.bytes}/`);
       event.reply(`${appName}-progress`, progress);
     }
-  );
+  );*/
+  fs.readFile(logPath, 'utf8', function (err,data){
+    if (err) {
+      return console.log(err);
+    }
+    //console.log(data);
+    const installSize = data.split("Install size: ")[1].split("\n")[0].replace("MiB","MB")||"0MB/0MB";
+    const p = data.split("Progress: ")[data.split("Progress: ").length-1];
+    const status = `${p.split("\n")[0]}`.split('(');
+    const percent = status[0].trimRight()||"0%"
+    const b = data.split("Downloaded: ")[data.split("Downloaded: ").length-1].split("\n")[0];
+    const bytes = b.split(", ")[0].replace('MiB', 'MB') + "/" + installSize||"0MB/0MB"
+    const progress = { percent, bytes }    
+    console.log(`Install Progress: ${appName} ${progress.percent}/${progress.bytes}/`);
+    event.reply(`${appName}-progress`, progress);
+  });
 });
 
 ipcMain.on("kill", (event, game) => {
@@ -246,10 +263,20 @@ ipcMain.on("requestSettings", (event, appName) => {
 //Checks if the user have logged in with Legendary already
 ipcMain.handle("isLoggedIn", () => isLoggedIn());
 
-ipcMain.on("openLoginPage", () => spawn("xdg-open", [loginUrl]));
-ipcMain.on("openSidInfoPage", () => spawn("xdg-open", [sidInfoUrl]));
+if(os.platform() === "win32") 
+{
+  ipcMain.on("openLoginPage", () => shell.openExternal(loginUrl));
+  ipcMain.on("openSidInfoPage", () => shell.openExternal(sidInfoUrl));
 
-ipcMain.on("getLog", (event, appName) => spawn("xdg-open", [`${heroicGamesConfigPath}/${appName}-lastPlay.log`]));
+  ipcMain.on("getLog", (event, appName) => spawn(opencmd, [`${heroicGamesConfigPath}/${appName}-lastPlay.log`]));
+}
+else
+{
+  ipcMain.on("openLoginPage", () => spawn("xdg-open", [loginUrl]));
+  ipcMain.on("openSidInfoPage", () => spawn("xdg-open", [sidInfoUrl]));
+
+  ipcMain.on("getLog", (event, appName) => spawn("xdg-open", [`${heroicGamesConfigPath}/${appName}-lastPlay.log`]));
+}
 
 ipcMain.handle("readFile", async (event, file) => {
   const loggedIn = isLoggedIn();
