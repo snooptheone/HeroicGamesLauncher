@@ -120,9 +120,7 @@ export default function Settings() {
           <NavLink to={{ pathname: '/settings/default/general' }}>
               General
           </NavLink>}
-          <NavLink to={{ pathname: `/settings/${appName}/wine` }}>
-            Wine
-          </NavLink>
+          
           {(!isDefault && haveCloudSaving.cloudSaveEnabled) && 
           <NavLink to={{ pathname: `/settings/${appName}/sync`}}>
             Sync

@@ -14,29 +14,13 @@ interface Props {
 
 export default function OtherSettings({
   otherOptions, 
-  setOtherOptions, 
-  useGameMode, 
-  toggleUseGameMode, 
-  showFps, 
-  toggleFps
+  setOtherOptions
 }: Props) {
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => setOtherOptions(event.currentTarget.value)
 
   return (
     <>
-      <span className="setting">
-        <span className="toggleWrapper">
-          Show FPS (DXVK_HUD=fps)
-          <ToggleSwitch value={showFps} handleChange={toggleFps} /> 
-        </span>
-      </span>
-      <span className="setting">
-        <span className="toggleWrapper">
-          Use GameMode (Feral Game Mode needs to be installed)
-          <ToggleSwitch value={useGameMode} handleChange={toggleUseGameMode} /> 
-        </span>
-      </span>
       <span className="setting">
         <span className="settingText">
           Advanced Options (Enviroment Variables):

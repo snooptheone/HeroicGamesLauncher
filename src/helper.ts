@@ -28,7 +28,7 @@ export let progress: string;
 
 export const returnedOutput = () => ipcRenderer.on('requestedOutput', (event: any, arg: string) => progress = arg )
 
-export const sendKill = (appName: string) => ipcRenderer.send('kill', appName)
+export const sendKill = async (appName: string) => await ipcRenderer.invoke('kill', appName)
 
 export const legendary = async (args: string): Promise<any> => await ipcRenderer.invoke('legendary', args)
   .then(async(res: string) => {    
