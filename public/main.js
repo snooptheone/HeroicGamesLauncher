@@ -261,7 +261,7 @@ ipcMain.handle("kill", async (event, game) => {
   return await execAsync("taskkill /IM legendary.exe /f");
 });
 
-ipcMain.on("openFolder", (event, folder) => spawn("xdg-open", [folder]));
+ipcMain.on("openFolder", (event, folder) => execAsync(`start ${folder}`));
 
 // Calls WineCFG or Winetricks. If is WineCFG, use the same binary as wine to launch it to dont update the prefix
 ipcMain.on("callTool", async (event, { tool, wine, prefix }) => {
