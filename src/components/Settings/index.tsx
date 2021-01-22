@@ -2,11 +2,14 @@ import { IpcRendererEvent } from "electron";
 import React, { useEffect, useState } from "react";
 import { NavLink, useParams } from 'react-router-dom';
 import { getGameInfo, writeConfig } from "../../helper";
-import { AppSettings } from '../../types';
+import { useToggle } from "../../hooks";
+import { AppSettings, WineProps } from '../../types';
 import Header from "../UI/Header";
 import GeneralSettings from './GeneralSettings';
+import OtherSettings from './OtherSettings';
 import SyncSaves from './SyncSaves';
-
+import Tools from './Tools';
+import WineSettings from './WineSettings';
 
 const {
   ipcRenderer,
@@ -21,17 +24,29 @@ interface RouteParams {
 // TODO: add feedback when launching winecfg and winetricks
 
 export default function Settings() {
-  
+  const [wineVersion, setWineversion] = useState({
+    name: "Wine Default",
+    bin: "/usr/bin/wine",
+  } as WineProps);
+  const [winePrefix, setWinePrefix] = useState("~/.wine");
   const [defaultInstallPath, setDefaultInstallPath] = useState("");
+  const [otherOptions, setOtherOptions] = useState("");
   const [egsLinkedPath, setEgsLinkedPath] = useState("")
   const [egsPath, setEgsPath] = useState(egsLinkedPath);
   const [savesPath, setSavesPath] = useState('');
+  const { on: useGameMode, toggle: toggleUseGameMode, setOn: setUseGameMode } = useToggle(false);
+  const { on: showFps, toggle: toggleFps, setOn: setShowFps } = useToggle(false);
+
   const [haveCloudSaving, setHaveCloudSaving] = useState({cloudSaveEnabled: false, saveFolder: ""});
   const [autoSyncSaves, setAutoSyncSaves] = useState(false)
+  const [altWine, setAltWine] = useState([] as WineProps[]);
+
   const { appName, type } = useParams() as RouteParams;
   const isDefault = appName === 'default'
   const isGeneralSettings = type === 'general'
+  const isWineSettings = type === 'wine'
   const isSyncSettings = type === 'sync'
+  const isOtherSettings = type === 'other'
 
   const settings = isDefault ? 'defaultSettings' : appName
 
@@ -40,7 +55,12 @@ export default function Settings() {
     ipcRenderer.once(
       settings,
       async (event: IpcRendererEvent, config: AppSettings) => {
+        setUseGameMode(config.useGameMode || false);
+        setShowFps(config.showFps || false);
         setDefaultInstallPath(config.defaultInstallPath);
+        setWineversion(config.wineVersion);
+        setWinePrefix(config.winePrefix);
+        setOtherOptions(config.otherOptions);
         setEgsLinkedPath(config.egsLinkedPath || "")
         setEgsPath(config.egsLinkedPath || "")
         setSavesPath(config.savesPath || "")
@@ -49,6 +69,12 @@ export default function Settings() {
           const {cloudSaveEnabled, saveFolder} = await getGameInfo(appName)
           setHaveCloudSaving({cloudSaveEnabled, saveFolder})
         }
+        
+        ipcRenderer.send("getAlternativeWine");
+        ipcRenderer.on(
+          "alternativeWine",
+          (event: IpcRendererEvent, args: WineProps[]) => setAltWine(args)
+        );
       }
     );
   }, [appName, settings, type, isDefault]);
@@ -56,13 +82,23 @@ export default function Settings() {
     const GlobalSettings = {
         defaultSettings: {
           defaultInstallPath,
-          egsLinkedPath
+          wineVersion,
+          winePrefix,
+          otherOptions,
+          useGameMode,
+          egsLinkedPath,
+          showFps
         },
     }
 
     const GameSettings = {
       [appName]: {
+        wineVersion,
+        winePrefix,
+        otherOptions,
+        useGameMode,
         savesPath,
+        showFps,
         autoSyncSaves
       },
     }
@@ -89,6 +125,9 @@ export default function Settings() {
           <NavLink to={{ pathname: `/settings/${appName}/sync`}}>
             Sync
           </NavLink>}
+          <NavLink to={{ pathname: `/settings/${appName}/other`}}>
+            Other
+          </NavLink>
         </div>
         <div className="settingsWrapper">
           {isGeneralSettings &&
@@ -100,7 +139,24 @@ export default function Settings() {
               defaultInstallPath={defaultInstallPath} 
               setDefaultInstallPath={setDefaultInstallPath}
             />          
-          }          
+          }
+          {isWineSettings && 
+          <WineSettings 
+            altWine={altWine}
+            wineVersion={wineVersion}
+            winePrefix={winePrefix}
+            setWineversion={setWineversion}
+            setWinePrefix={setWinePrefix}
+          />}
+          {isOtherSettings && 
+          <OtherSettings 
+            otherOptions={otherOptions} 
+            setOtherOptions={setOtherOptions} 
+            useGameMode={useGameMode}
+            toggleUseGameMode={toggleUseGameMode}
+            showFps={showFps}
+            toggleFps={toggleFps}
+          />}
           {isSyncSettings &&
             <SyncSaves 
               savesPath={savesPath}
@@ -111,6 +167,11 @@ export default function Settings() {
               setAutoSyncSaves={setAutoSyncSaves}
             />
           }
+          {isWineSettings && 
+          <Tools 
+            winePrefix={winePrefix}
+            wineVersion={wineVersion}
+          />}
           <span className="save">
               Settings are saved automatically
           </span>
